@@ -1,0 +1,13 @@
+---
+# Facts tasks
+
+- name: Create local facts directory
+  file:
+    path: /etc/ansible/facts.d
+    state: directory
+
+- name: Setup keystore local fact
+  template:
+    src: java_keystore.fact.j2
+    dest: "/etc/ansible/facts.d/java_keystore_{{ java_keystore_id }}.fact"
+    mode: 0640

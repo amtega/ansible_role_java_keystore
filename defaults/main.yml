@@ -1,2 +1,36 @@
 ---
 # Role default lower priority variables
+
+# Id of the keystore for identification purposes (the local fact created on the
+# host will have this id associated)
+
+jaka_keystore_id:
+
+# Path to the keystore to manage
+
+java_keystore_path:
+
+# Keystore password
+
+java_keystore_password:
+
+# List of dicts with the keys to manage. The format of the dict is:
+# {
+#   alias: <alias>
+#   path: <path>                # Path to the key file to import. If state is
+#                               # self-signed the certificate will be exported
+#                               # to this path
+#   extra_args: <list>          # Extra args to pass to the keytool
+#   password: <password>
+#   state: <state>              # Can be present, absent or self-signed.
+#                               # The present state requires path parameter
+#                               # point to the key file to import.
+#                               # The self-signed parameter will generate a
+#                               # self signed certificate. 
+# }
+
+java_keystore_keys: []
+
+# Hide sensitive information
+
+java_keystore_no_log: yes
