@@ -33,8 +33,9 @@
   no_log: "{{ java_keystore_no_log | bool }}"
   vars:
     java_keystore_keypass_arg: >-
-      {{ (java_keystore_item.password | length > 0)
-         | ternary("-keypass " + java_keystore_item.password, "") }}
+      {{ (java_keystore_item.password | default("") | length > 0)
+         | ternary("-keypass " + java_keystore_item.password | default(""),
+                   "") }}
 
     java_keystore_item_args: >-
       {{ (java_keystore_item.state | default("present") == "self-signed")
