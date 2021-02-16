@@ -2,8 +2,56 @@
 
 - name: Prepare
   hosts: molecule_hosts
-  gather_facts: no
+  gather_facts: yes
   tasks:
-    - name: Setup java
+    - name: Setup required packages
       package:
-        openjdk: present
+        name:
+          - java
+          - openssl
+          - "{{ cryptography_package }}"
+        state: present
+      vars:
+        cryptography_package: >-
+          {{ ansible_facts.distribution_major_version is version("7", ">")
+             | ternary("python3-cryptography", "python-cryptography") }}
+
+    - name: Generate private key
+      openssl_privatekey:
+        path:  /tmp/testing.pem
+        size: 1024
+        type: RSA
+
+    - name: Generate CSR
+      openssl_csr:
+        path: /tmp/testing.csr
+        privatekey_path: /tmp/testing.pem
+        country_name: US
+        organization_name: ACME
+        email_address: acme@acme.com
+        common_name: "{{ inventory_hostname }}"
+
+    - name: Generate self signed certificate
+      openssl_certificate:
+        path: /tmp/testing.crt
+        privatekey_path: /tmp/testing.pem
+        csr_path: /tmp/testing.csr
+        provider: selfsigned
+
+    - name: Read certificate
+      command: cat /tmp/testing.crt
+      register: read_certificate_result
+      changed_when: no
+
+    - name: Read private key
+      command: cat /tmp/testing.pem
+      register: read_private_key_result
+      changed_when: no
+
+    - name: Create testing key store
+      java_keystore:
+        name: testing
+        certificate: "{{ read_certificate_result.stdout }}"
+        private_key: "{{ read_private_key_result.stdout }}"
+        password: changeit
+        dest: /tmp/keystore.jks
