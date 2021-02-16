@@ -14,9 +14,22 @@ This is an example playbook:
 ---
 - hosts: localhost
   roles:  
-    - amtega.java_keystore
-  vars:
-    
+    - role: amtega.java_keystore
+      vars:
+        java_keystore_id: keystore
+        java_keystore_path: /tmp/keystore.jks
+        java_keystore_password: changeit
+
+        java_keystore_keys:
+          - alias: testing
+            path: /tmp/mycert.crt
+            state: self-signed
+            extra_args:
+              - -sigalg SHA256withRSA
+              - -keyalg RSA
+              - -dname "CN={{ inventory_hostname }}"
+              - -ext "SAN=DNS:localhost"
+              - -validity {{ 365 * 100 }}
 ~~~
 
 ## Testing
