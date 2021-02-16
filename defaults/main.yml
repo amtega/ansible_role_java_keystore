@@ -4,7 +4,7 @@
 # Id of the keystore for identification purposes (the local fact created on the
 # host will have this id associated)
 
-jaka_keystore_id:
+java_keystore_id:
 
 # Path to the keystore to manage
 
@@ -26,7 +26,7 @@ java_keystore_password:
 #                               # The present state requires path parameter
 #                               # point to the key file to import.
 #                               # The self-signed parameter will generate a
-#                               # self signed certificate. 
+#                               # self signed certificate.
 # }
 
 java_keystore_keys: []
