@@ -1,0 +1,46 @@
+---
+# Add keys tasks
+
+- name: Setup keys into keystore
+  command: >-
+    keytool
+    -noprompt
+    {{ java_keystore_item_args }}
+    -alias {{ java_keystore_item.alias }}
+    -keystore {{ java_keystore_path }}
+    -storepass {{ java_keystore_password }}
+    -v
+    {{ java_keystore_item.extra_args
+       | default([])
+       | join(" ") }}
+  when:
+    - >-
+      java_keystore_item.state | default("present") == "present"
+      or java_keystore_item.state | default("present") == "self-signed"
+    - >-
+      java_keystore_local_facts.certs
+      [java_keystore_item.alias].fingerprint | default(none)
+      != java_keystore_fingerprints_result.results
+         [java_keystore_index].stdout | lower
+      or java_keystore_remove_certs_result.results[java_keystore_index]
+         is changed
+  register: java_keystore_setup_certs_result
+  loop: "{{ java_keystore_keys }}"
+  loop_control:
+    loop_var: java_keystore_item
+    index_var: java_keystore_index
+    label: "{{ java_keystore_item.alias }}"
+  no_log: "{{ java_keystore_no_log | bool }}"
+  vars:
+    java_keystore_keypass_arg: >-
+      {{ (java_keystore_item.password | default("") | length > 0)
+         | ternary("-keypass " + java_keystore_item.password | default(""),
+                   "") }}
+
+    java_keystore_item_args: >-
+      {{ (java_keystore_item.state | default("present") == "self-signed")
+         | ternary("-genkey",
+                   "-import -file "
+                   + java_keystore_item.path | default(""))
+         + " "
+         + java_keystore_keypass_arg }}
