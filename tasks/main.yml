@@ -1,2 +1,19 @@
 ---
 # Role tasks
+
+- block:
+    - include_tasks: fingerprints.yml
+    - include_tasks: remove.yml
+    - include_tasks: add.yml
+    - include_tasks: export.yml
+
+    - include_tasks: fingerprints.yml
+      vars:
+        java_keystore_no_certs_fingerprints: yes
+
+    - include_tasks: facts.yml
+  vars:
+    java_keystore_local_facts: >-
+      {{ ansible_local["java_keystore_" + java_keystore_id] | default({}) }}
+  tags:
+    - role::java_keystore

@@ -1,0 +1,28 @@
+---
+# Remove keys tasks
+
+- name: Remove keys from keystore
+  java_cert:
+    keystore_path: "{{ java_keystore_path }}"
+    keystore_pass: "{{ java_keystore_password }}"
+    cert_alias: "{{ java_keystore_item.alias }}"
+    cert_path: "{{ java_keystore_item.path | default(none) }}"
+    state: absent
+  when: >-
+    (java_keystore_item.state | default("present") == "self-signed"
+      and java_keystore_local_facts.certs
+          [java_keystore_item.alias].fingerprint | default(none)
+          != java_keystore_fingerprints_result.results
+             [java_keystore_index].stdout | lower)
+    or (not java_keystore_item.state | default("present") == "self-signed"
+        and java_keystore_certs_fingerprints_result.results[java_keystore_index]
+            .fingerprints.sha256 | default(none)
+             != java_keystore_fingerprints_result.results
+                [java_keystore_index].stdout | lower)
+  register: java_keystore_remove_certs_result
+  loop: "{{ java_keystore_keys }}"
+  loop_control:
+    loop_var: java_keystore_item
+    index_var: java_keystore_index
+    label: "{{ java_keystore_item.alias }}"
+  no_log: "{{ java_keystore_no_log | bool }}"
