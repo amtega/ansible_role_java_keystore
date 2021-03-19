@@ -36,6 +36,7 @@
   loop_control:
     loop_var: keystore_item
     label: "{{ keystore_item.alias }}"
+  failed_when: no
   no_log: "{{ java_keystore_no_log | bool }}"
   vars:
     java_keystore_keypass_arg: >-
