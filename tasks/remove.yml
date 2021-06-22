@@ -14,8 +14,10 @@
           [java_keystore_item.alias].fingerprint | default(none) | lower
           != java_keystore_fingerprints_result.results
              [java_keystore_index].stdout | lower)
-    or (java_keystore_item.state | default("present") != "self-signed"
-        and (java_keystore_certs_fingerprints_result.results[java_keystore_index]
+    or (java_keystore_item.state | default("present")
+        not in ["self-signed", "exported"]
+        and (java_keystore_certs_fingerprints_result.results
+             [java_keystore_index]
              .fingerprints.sha256 | default(none) | lower
               != java_keystore_fingerprints_result.results
                  [java_keystore_index].stdout | lower
