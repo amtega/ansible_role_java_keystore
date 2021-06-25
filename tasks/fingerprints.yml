@@ -5,8 +5,11 @@
   openssl_certificate_info:
     path: "{{ java_keystore_item.path }}"
   when:
-    - not java_keystore_no_certs_fingerprints | default(false) | bool
-    - not java_keystore_item.state | default("present") == "self-signed"
+    - >-
+      not java_keystore_no_certs_fingerprints | default(false) | bool
+    - >-
+      not java_keystore_item.state | default("present")
+      in ["self-signed", "exported"]
     - java_keystore_item.path | default("") | length > 0
   register: java_keystore_certs_fingerprints_result
   loop: "{{ java_keystore_keys }}"

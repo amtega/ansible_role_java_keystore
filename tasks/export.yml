@@ -4,7 +4,9 @@
 - name: Check exported certificates
   stat:
     path: "{{ java_keystore_item.path }}"
-  when: java_keystore_item.state | default("present") == "self-signed"
+  when: >-
+    java_keystore_item.state | default("present")
+    in ["self-signed", "exported"]
   register: java_keystore_check_exported_result
   loop: "{{ java_keystore_keys }}"
   loop_control:
@@ -23,8 +25,11 @@
     -rfc
     -file {{ java_keystore_item.path }}
   when:
-    - java_keystore_item.state | default("present") == "self-signed"
-    - java_keystore_item.path | default("") | length > 0
+    - >-
+      java_keystore_item.state | default("present")
+      in ["self-signed", "exported"]
+    - >-
+      java_keystore_item.path | default("") | length > 0
     - >-
       not java_keystore_check_exported_result.results[java_keystore_index]
           .stat.exists
