@@ -3,6 +3,7 @@
 
 galaxy_info:
   role_name: java_keystore
+  namespace: amtega
   author: Juan Antonio Valiño García
   description: Manage a java keystore
   company: AMTEGA - Xunta de Galicia
@@ -15,8 +16,8 @@ galaxy_info:
         - 8
     - name: Fedora
       versions:
-        - 32
         - 33
+        - 34
   galaxy_tags: []
 
 dependencies:
@@ -24,7 +25,7 @@ dependencies:
     vars:
       check_platform_distributions:
         centos: 7
-        fedora: 32
+        fedora: 33
         redhat: 7
 
   - role: amtega.packages

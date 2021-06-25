@@ -2,6 +2,12 @@
 
 dependency:
   name: galaxy
+  enabled: yes
+  options:
+    ignore-certs: yes
+    ignore-errors: yes
+    role-file: "${MOLECULE_SCENARIO_DIRECTORY}/requirements.yml"
+    requirements-file: "${MOLECULE_SCENARIO_DIRECTORY}/requirements.yml"
 driver:
   name: docker
 lint: "${MOLECULE_SCENARIO_DIRECTORY}/linters.sh"
@@ -18,23 +24,23 @@ platforms:
       - molecule_hosts
       - molecule_hosts_centos
       - molecule_hosts_centos_8
-  - name: "fedora32-${INSTANCE_UUID:-1}"
-    image: fedora:32
-    groups:
-      - molecule_hosts
-      - molecule_hosts_fedora
-      - molecule_hosts_fedora_32
   - name: "fedora33-${INSTANCE_UUID:-1}"
     image: fedora:33
     groups:
       - molecule_hosts
       - molecule_hosts_fedora
       - molecule_hosts_fedora_33
+  - name: "fedora34-${INSTANCE_UUID:-1}"
+    image: fedora:34
+    groups:
+      - molecule_hosts
+      - molecule_hosts_fedora
+      - molecule_hosts_fedora_34
 provisioner:
   name: ansible
   config_options:
     defaults:
-      callback_whitelist: profile_tasks
+      callback_enabled: profile_tasks
       action_plugins: $PWD/action_plugins
   inventory:
     hosts:
@@ -54,6 +60,10 @@ provisioner:
                 - -dname "CN={{ inventory_hostname }}"
                 - -ext "SAN=DNS:localhost"
                 - -validity {{ 365 * 100 }}
+
+            - alias: testing
+              path: /tmp/mycert_exported.crt
+              state: exported
 
           java_keystore_no_log: no
 
