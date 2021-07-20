@@ -2,8 +2,12 @@
 # Gather fingerprints tasks
 
 - name: Gather fingerprints from certificates files
-  openssl_certificate_info:
-    path: "{{ java_keystore_item.path }}"
+  shell: >-
+    set -o pipefail ;
+    {{ java_keystore_item_cmd_map
+       [(java_keystore_item.path | splitext).1] }}
+  args:
+    warn: no
   when:
     - >-
       not java_keystore_no_certs_fingerprints | default(false) | bool
@@ -12,11 +16,31 @@
       in ["self-signed", "exported"]
     - java_keystore_item.path | default("") | length > 0
   register: java_keystore_certs_fingerprints_result
+  changed_when: no
   loop: "{{ java_keystore_keys }}"
   loop_control:
     loop_var: java_keystore_item
     index_var: java_keystore_index
     label: "{{ java_keystore_item.path }}"
+  vars:
+    java_keystore_item_cmd_map:
+      .crt: >-
+        openssl x509
+        -in {{ java_keystore_item.path }}
+        -noout
+        -fingerprint
+        -sha256
+        | sed -r "s#.*=(.*)#\1#" | tr "[:upper:]" "[:lower:]"
+
+      .p12: >-
+        openssl pkcs12
+        -in {{ java_keystore_item.path }}
+        -nodes
+        -nokeys
+        -passin pass:{{ java_keystore_item.password }}
+        | openssl x509 -noout -fingerprint -sha256
+        | sed -r "s#.*=(.*)#\1#"
+        | tr "[:upper:]" "[:lower:]"
 
 - name: Gather fingerprints from keystore
   shell: >-

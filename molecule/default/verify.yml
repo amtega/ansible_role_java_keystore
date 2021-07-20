@@ -7,14 +7,32 @@
     - name: Check certificate files
       stat:
         path: "{{ item }}"
-      loop: "{{ certificate_files }}"
+      loop: "{{ crt_files }}"
       register: check_certs_results
+
+    - name: Check PKCS12 files
+      stat:
+        path: "{{ item }}"
+      loop: "{{ p12_files }}"
+      register: check_pkeys_results
 
     - name: Assert certificate files exist
       assert:
         that: check_certs_results.results[index].stat.exists
-      loop: "{{ certificate_files }}"
+      loop: "{{ crt_files }}"
+      loop_control:
+        index_var: index
+
+    - name: Assert PKCS12 files exist
+      assert:
+        that: check_pkeys_results.results[index].stat.exists
+      loop: "{{ p12_files }}"
       loop_control:
         index_var: index
   vars:
-    certificate_files: "{{ java_keystore_keys | map(attribute='path') | list }}"
+    crt_files: "{{ java_keystore_keys | map(attribute='path') | list }}"
+    p12_files: >-
+      {{ java_keystore_keys
+         | map(attribute='path')
+         | list
+         | map("regex_replace", "\.crt", ".p12") }}
