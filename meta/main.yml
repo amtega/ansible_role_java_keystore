@@ -30,7 +30,12 @@ dependencies:
 
   - role: amtega.packages
     vars:
+      packages_os:
+        all:
+          all:
+            openssl: present
       packages_python:
         all:
           all:
             cryptography: present
+            pyopenssl: present

@@ -1,43 +1,116 @@
 ---
 # Export tasks
 
-- name: Check exported certificates
-  stat:
-    path: "{{ java_keystore_item.path }}"
-  when: >-
-    java_keystore_item.state | default("present")
-    in ["self-signed", "exported"]
-  register: java_keystore_check_exported_result
-  loop: "{{ java_keystore_keys }}"
-  loop_control:
-    loop_var: java_keystore_item
-    index_var: java_keystore_index
-    label: "{{ java_keystore_item.alias }}"
+- block:
+    - name: Check exported certificates
+      stat:
+        path: "{{ java_keystore_item.path }}"
+      when: >-
+        java_keystore_item.state | default("present")
+        in ["self-signed", "exported"]
+      register: java_keystore_check_exported_certs_result
+      loop: "{{ java_keystore_keys }}"
+      loop_control:
+        loop_var: java_keystore_item
+        index_var: java_keystore_index
+        label: "{{ java_keystore_item.alias }}"
 
-- name: Export certificates
-  command: >-
-    keytool
-    -noprompt
-    -export
-    -alias {{ java_keystore_item.alias }}
-    -keystore {{ java_keystore_path }}
-    -storepass {{ java_keystore_password }}
-    -rfc
-    -file {{ java_keystore_item.path }}
-  when:
-    - >-
-      java_keystore_item.state | default("present")
-      in ["self-signed", "exported"]
-    - >-
-      java_keystore_item.path | default("") | length > 0
-    - >-
-      not java_keystore_check_exported_result.results[java_keystore_index]
-          .stat.exists
-      or java_keystore_setup_certs_result.results[java_keystore_index]
-         is changed
-  loop: "{{ java_keystore_keys }}"
-  loop_control:
-    loop_var: java_keystore_item
-    index_var: java_keystore_index
-    label: "{{ java_keystore_item.alias }}"
-  no_log: "{{ java_keystore_no_log | bool }}"
+    - name: Check exported PKCS12 certificates
+      stat:
+        path: "{{ java_keystore_item_p12_file }}"
+      when: >-
+        java_keystore_item.state | default("present")
+        in ["self-signed", "exported"]
+      register: java_keystore_check_exported_p12_result
+      loop: "{{ java_keystore_keys }}"
+      loop_control:
+        loop_var: java_keystore_item
+        index_var: java_keystore_index
+        label: "{{ java_keystore_item.alias }}"
+
+    - name: Export certificates
+      command: >-
+        keytool
+        -noprompt
+        -export
+        -alias {{ java_keystore_item.alias }}
+        -keystore {{ java_keystore_path }}
+        -storepass {{ java_keystore_password }}
+        -rfc
+        -file {{ java_keystore_item.path }}
+      when:
+        - >-
+          java_keystore_item.state | default("present")
+          in ["self-signed", "exported"]
+        - >-
+          java_keystore_item.path | default("") | length > 0
+        - >-
+          not java_keystore_check_exported_certs_result.results
+              [java_keystore_index].stat.exists
+          or java_keystore_setup_certs_result.results[java_keystore_index]
+             is changed
+      loop: "{{ java_keystore_keys }}"
+      loop_control:
+        loop_var: java_keystore_item
+        index_var: java_keystore_index
+        label: "{{ java_keystore_item.alias }}"
+      no_log: "{{ java_keystore_no_log | bool }}"
+
+    - block:
+        - name: Export certificate to PKCS12 format
+          command: >-
+            keytool
+            -noprompt
+            -importkeystore
+            -srckeystore {{ java_keystore_path }}
+            -srcstorepass {{ java_keystore_password }}
+            -srckeypass {{ java_keystore_password }}
+            -srcalias {{ java_keystore_item.alias }}
+            -destalias {{ java_keystore_item.alias }}
+            -destkeystore {{ java_keystore_item_p12_file }}
+            -deststoretype PKCS12
+            -deststorepass {{ java_keystore_password }}
+            -destkeypass {{ java_keystore_password }}
+          loop: "{{ java_keystore_keys }}"
+          loop_control:
+            loop_var: java_keystore_item
+            index_var: java_keystore_index
+            label: "{{ java_keystore_item.alias }}"
+          no_log: "{{ java_keystore_no_log | bool }}"
+
+      when:
+        - >-
+          java_keystore_item.state | default("present")
+          in ["self-signed", "exported"]
+        - >-
+          java_keystore_item.path | default("") | length > 0
+
+        - >-
+          not java_keystore_check_exported_p12_result.results
+              [java_keystore_index].stat.exists
+          or java_keystore_setup_certs_result.results[java_keystore_index]
+             is changed
+
+    - name: Setup PKCS12 certificate permissions
+      file:
+        path: "{{ java_keystore_item_p12_file }}"
+        mode: 0600
+      loop: "{{ java_keystore_keys }}"
+      loop_control:
+        loop_var: java_keystore_item
+        index_var: java_keystore_index
+        label: "{{ java_keystore_item.alias }}"
+      no_log: "{{ java_keystore_no_log | bool }}"
+
+  vars:
+    java_keystore_item_p12_file: >-
+      {{ java_keystore_item.path | dirname
+         + "/"
+         + (java_keystore_item.path | basename | splitext).0
+         + ".p12" }}
+
+    java_keystore_item_pem_file: >-
+      {{ java_keystore_item.path | dirname
+         + "/"
+         + (java_keystore_item.path | basename | splitext).0
+         + ".pem" }}
