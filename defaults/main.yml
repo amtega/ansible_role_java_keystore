@@ -22,9 +22,13 @@ java_keystore_password:
 #                               # to this path
 #   extra_args: <list>          # Extra args to pass to the keytool
 #   password: <password>
-#   state: <state>              # Can be present, absent or self-signed.
+#   state: <state>              # Can be present, absent, exported or
+#                               # self-signed.
 #                               # The present state requires path parameter
 #                               # point to the key file to import.
+#                               # The exported state will export the certificate
+#                               # to the indicated path and the private key to
+#                               # the same path with .pem extension
 #                               # The self-signed parameter will generate a
 #                               # self signed certificate.
 # }
