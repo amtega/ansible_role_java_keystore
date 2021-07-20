@@ -23,24 +23,28 @@
     index_var: java_keystore_index
     label: "{{ java_keystore_item.path }}"
   vars:
-    java_keystore_item_cmd_map:
-      .crt: >-
-        openssl x509
-        -in {{ java_keystore_item.path }}
-        -noout
-        -fingerprint
-        -sha256
-        | sed -r "s#.*=(.*)#\1#" | tr "[:upper:]" "[:lower:]"
+    java_keystore_item_cmd_crt: >-
+      openssl x509
+      -in {{ java_keystore_item.path }}
+      -noout
+      -fingerprint
+      -sha256
+      | sed -r "s#.*=(.*)#\1#" | tr "[:upper:]" "[:lower:]"
 
-      .p12: >-
-        openssl pkcs12
-        -in {{ java_keystore_item.path }}
-        -nodes
-        -nokeys
-        -passin pass:{{ java_keystore_item.password }}
-        | openssl x509 -noout -fingerprint -sha256
-        | sed -r "s#.*=(.*)#\1#"
-        | tr "[:upper:]" "[:lower:]"
+    java_keystore_item_cmd_p12: >-
+      openssl pkcs12
+      -in {{ java_keystore_item.path }}
+      -nodes
+      -nokeys
+      -passin pass:{{ java_keystore_item.password | default("") }}
+      | openssl x509 -noout -fingerprint -sha256
+      | sed -r "s#.*=(.*)#\1#"
+      | tr "[:upper:]" "[:lower:]"
+
+    java_keystore_item_cmd_map:
+      .crt: "{{ java_keystore_item_cmd_crt }}"
+      .p12: "{{ java_keystore_item_cmd_p12 }}"
+      .pem: "{{ java_keystore_item_cmd_crt }}"
 
 - name: Gather fingerprints from keystore
   shell: >-
