@@ -78,6 +78,17 @@
             label: "{{ java_keystore_item.alias }}"
           no_log: "{{ java_keystore_no_log | bool }}"
 
+        - name: Setup PKCS12 certificate permissions
+          file:
+            path: "{{ java_keystore_item_p12_file }}"
+            mode: 0600
+          loop: "{{ java_keystore_keys }}"
+          loop_control:
+            loop_var: java_keystore_item
+            index_var: java_keystore_index
+            label: "{{ java_keystore_item.alias }}"
+          no_log: "{{ java_keystore_no_log | bool }}"
+
       when:
         - >-
           java_keystore_item.state | default("present")
@@ -90,18 +101,6 @@
               [java_keystore_index].stat.exists
           or java_keystore_setup_certs_result.results[java_keystore_index]
              is changed
-
-    - name: Setup PKCS12 certificate permissions
-      file:
-        path: "{{ java_keystore_item_p12_file }}"
-        mode: 0600
-      loop: "{{ java_keystore_keys }}"
-      loop_control:
-        loop_var: java_keystore_item
-        index_var: java_keystore_index
-        label: "{{ java_keystore_item.alias }}"
-      no_log: "{{ java_keystore_no_log | bool }}"
-
   vars:
     java_keystore_item_p12_file: >-
       {{ java_keystore_item.path | dirname

@@ -24,39 +24,43 @@
     label: "{{ java_keystore_item.alias }}"
   no_log: "{{ java_keystore_no_log | bool }}"
   vars:
+    java_keystore_item_cmd_crt:  >-
+      keytool
+      -noprompt
+
+      {{ (java_keystore_item.state | default("present") == "self-signed")
+         | ternary("-genkey",
+                   "-import -file "
+                   + java_keystore_item.path | default("")) }}
+
+      {{ (java_keystore_item.password | default("") | length > 0)
+         | ternary("-keypass " + java_keystore_item.password | default(""),
+                   "") }}
+
+      -alias {{ java_keystore_item.alias }}
+      -keystore {{ java_keystore_path }}
+      -storepass {{ java_keystore_password }}
+      -v
+
+      {{ java_keystore_item.extra_args
+         | default([])
+         | join(" ") }}
+
+    java_keystore_item_cmd_p12: >-
+      keytool
+      -importkeystore
+      -srckeystore {{ java_keystore_item.path }}
+      -srcstoretype PKCS12
+      -srcstorepass {{ java_keystore_item.password | default("") }}
+      -srckeypass {{ java_keystore_item.password | default("") }}
+      -srcalias {{ java_keystore_item.alias }}
+      -destalias {{ java_keystore_item.alias }}
+      -destkeystore {{ java_keystore_path }}
+      -deststoretype JKS
+      -deststorepass {{ java_keystore_password }}
+      -destkeypass {{ java_keystore_item.password | default("") }}
+
     java_keystore_item_cmd_map:
-      .crt:
-        keytool
-        -noprompt
-
-        {{ (java_keystore_item.state | default("present") == "self-signed")
-           | ternary("-genkey",
-                     "-import -file "
-                     + java_keystore_item.path | default("")) }}
-
-        {{ (java_keystore_item.password | default("") | length > 0)
-           | ternary("-keypass " + java_keystore_item.password | default(""),
-                     "") }}
-
-        -alias {{ java_keystore_item.alias }}
-        -keystore {{ java_keystore_path }}
-        -storepass {{ java_keystore_password }}
-        -v
-
-        {{ java_keystore_item.extra_args
-           | default([])
-           | join(" ") }}
-
-      .p12:
-        keytool
-        -importkeystore
-        -srckeystore {{ java_keystore_item.path }}
-        -srcstoretype PKCS12
-        -srcstorepass {{ java_keystore_item.password | default("") }}
-        -srckeypass {{ java_keystore_item.password | default("") }}
-        -srcalias {{ java_keystore_item.alias }}
-        -destalias {{ java_keystore_item.alias }}
-        -destkeystore {{ java_keystore_path }}
-        -deststoretype JKS
-        -deststorepass {{ java_keystore_password }}
-        -destkeypass {{ java_keystore_item.password | default("") }}
+      .crt: "{{ java_keystore_item_cmd_crt }}"
+      .p12: "{{ java_keystore_item_cmd_p12 }}"
+      .pem: "{{ java_keystore_item_cmd_crt }}"
